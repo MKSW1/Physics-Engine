@@ -1,122 +1,144 @@
-README 
+# 物理引擎演示：碰撞计数与π的关系
 
----
+## 项目简介
+本项目是一个基于C语言的物理模拟程序，通过两个物块的**弹性碰撞**（含物块与墙壁碰撞），直观展示碰撞次数与物块质量比（1:10ⁿ，n为用户输入的质量幂次）的数学关联。理论上，当质量比为1:10ⁿ（n为偶数）时，碰撞总次数会趋近于 **π×10ⁿ/²**，从而将物理模拟与数学常数π建立联系，兼具教学（物理弹性碰撞、数值计算）与演示价值。
 
-```markdown
-# ⚛️ Elastic Collision π Simulation
+程序采用高精度计算（`long double`）、自适应时间步长、连续碰撞检测（CCD）等优化手段，确保模拟精度；同时针对大n值（n>22）提供解析近似方案，避免性能瓶颈。
 
-A physics-based simulation and visualization project that reveals the fascinating connection between **elastic collisions** and the mathematical constant **π**.  
 
-By simulating two blocks colliding with each other and with a wall, the total number of collisions approximates:
+## 核心功能
+- **高精度物理模拟**：使用`long double`类型存储物理量（质量、位置、速度），自定义高精度π常量（`M_PI_L`），减少浮点误差。
+- **弹性碰撞计算**：严格遵循弹性碰撞速度公式，支持物块间碰撞与物块-墙壁碰撞（墙壁碰撞速度反向）。
+- **连续碰撞检测（CCD）**：通过迭代检测一个时间步内的所有潜在碰撞，避免物块穿透（尤其高速度场景）。
+- **自适应时间步长**：根据物块速度和质量幂次动态调整时间步（`dt`），平衡模拟精度与性能。
+- **大n值优化**：当质量幂次`n>22`时，自动使用解析近似（直接计算理论值），避免高频碰撞导致的卡顿。
+- **可视化交互**：基于EasyX图形库实现实时渲染（物块、墙壁、地面），动态显示碰撞次数、理论值、误差百分比。
+- **用户交互**：终端输入质量幂次`n`（1≤n≤36），图形界面展示启动倒计时与模拟过程，支持按键退出。
 
-\[
-\text{Collisions} \;\approx\; \pi \times 10^{n/2}
-\]
 
-where `n` is the exponent of the mass ratio between the two blocks.
+## 环境要求
+| 依赖项                | 要求说明                                                                 |
+|-----------------------|--------------------------------------------------------------------------|
+| 操作系统              | Windows 10/11（依赖`graphics.h`（EasyX）、`conio.h`等Windows专属库）     |
+| 编译器                | 支持C99及以上标准的C编译器（如Visual Studio 2019+、MinGW-w64 8.1+）      |
+| 图形库                | EasyX 2023夏季版及以上（用于`graphics.h`相关绘图功能，[官网下载](https://easyx.cn/)） |
+| 其他依赖              | 标准库（`stdio.h`、`math.h`、`windows.h`等，通常编译器自带）              |
 
----
 
-## ✨ Features
+## 编译与运行步骤
+### 1. 环境准备
+1. 安装编译器（以Visual Studio为例）：
+   - 下载并安装[Visual Studio](https://visualstudio.microsoft.com/)，安装时勾选“使用C++的桌面开发”。
+2. 安装EasyX图形库：
+   - 从[EasyX官网](https://easyx.cn/)下载最新版，运行安装程序，选择对应编译器（如VS2022）完成集成。
 
-- ⚡ **High-precision physics engine** using `long double` for accurate calculations  
-- ⏱️ **Adaptive time-stepping** with **continuous collision detection (CCD)** to prevent tunneling  
-- 🎨 **Real-time visualization** powered by EasyX graphics  
-- 📊 **Dynamic statistics display**: collision count, theoretical value, and error margin  
-- 📈 **Analytical approximation** for large mass ratios to improve performance  
-- 🎓 **Educational value**: demonstrates the surprising link between physics and mathematics  
 
----
+### 2. 编译代码
+#### 方式1：使用Visual Studio
+1. 打开Visual Studio，新建“控制台应用”项目（空项目）。
+2. 在项目中添加`.c`文件（如`collision-pi.c`），将本项目代码复制粘贴到文件中。
+3. 配置项目属性（可选，若编译报错）：
+   - 右键项目 → “属性” → “C/C++” → “常规” → “附加包含目录”：确保EasyX的`graphics.h`路径已添加（通常默认集成）。
+   - “链接器” → “输入” → “附加依赖项”：添加`EasyXa.lib`（32位）或`EasyXw.lib`（64位，根据编译器架构选择）。
+4. 点击“本地Windows调试器”或按`F5`编译并运行。
 
-## 📂 Project Structure
-
-```
-.
-├── main.c / main.cpp   # Core simulation code
-├── README.md           # Project documentation
-└── (other files)       # Supporting headers, configs, etc.
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Windows environment (EasyX graphics library is Windows-only)  
-- C/C++ compiler (e.g., MSVC, MinGW)  
-- [EasyX graphics library](https://easyx.cn/) installed  
-
-### Build & Run
-1. Clone the repository:
+#### 方式2：使用MinGW-w64
+1. 安装MinGW-w64（确保包含`gcc`编译器），配置环境变量（将`mingw64\bin`路径添加到系统`PATH`）。
+2. 下载EasyX的MinGW版本（[官网提供](https://easyx.cn/downloads/down-easyx-for-mingw)），将`graphics.h`复制到`mingw64\include`，`libeasyx.a`复制到`mingw64\lib`。
+3. 打开命令提示符（CMD），进入代码所在目录，执行编译命令：
    ```bash
-   git clone https://github.com/your-username/elastic-collision-pi.git
-   cd elastic-collision-pi
+   gcc collision-pi.c -o collision-pi.exe -leasyx -lm -lmsvcrt
    ```
-2. Open the project in **Visual Studio** or compile with your preferred compiler.  
-3. Run the executable.  
-4. Enter the mass ratio exponent `n` when prompted (e.g., `n = 2, 4, 6...`).  
+   （`-leasyx`链接EasyX库，`-lm`链接数学库，`-lmsvcrt`适配Windows运行时）
+4. 运行生成的`collision-pi.exe`。
 
----
 
-## 📖 Usage
+## 使用说明
+1. **启动程序**：编译成功后运行可执行文件，将同时弹出两个窗口：
+   - **终端窗口**：用于输入质量幂次`n`。
+   - **图形窗口**：显示操作提示（请在终端输入`n`）。
+2. **输入参数**：在终端中输入质量幂次`n`（要求：1≤n≤36，建议先从n=2、4等小值开始测试），按回车确认。
+3. **模拟过程**：
+   - 若`n≤22`（小n值）：图形窗口显示5秒倒计时，随后开始模拟（红色物块为质量1的block1，蓝色物块为质量10ⁿ的block2）。
+   - 若`n>22`（大n值）：直接跳过模拟，显示解析近似计算的结果。
+4. **查看结果**：
+   - 模拟过程中，图形窗口实时显示“碰撞次数”“理论值（π×10ⁿ/²）”“误差百分比”。
+   - 模拟结束（或大n值计算完成）后，显示“最终碰撞次数”，按任意键退出程序。
 
-- The program will simulate two blocks colliding with each other and the wall.  
-- The **red block** has mass = 1, initially at rest.  
-- The **blue block** has mass = 10^n, moving towards the red block.  
-- The simulation counts collisions and compares them with the theoretical value.  
 
-Example output:
+## 代码核心模块说明
+### 1. 物理模拟核心
+#### （1）弹性碰撞公式
+- **物块间碰撞**：基于动量守恒与动能守恒，速度更新公式：
+  ```c
+  block1.vx = ((m1 - m2) * v1 + 2*m2 * v2) / (m1 + m2);
+  block2.vx = (2*m1 * v1 + (m2 - m1) * v2) / (m1 + m2);
+  ```
+- **物块-墙壁碰撞**：墙壁视为无限质量，物块速度反向（`block1.vx = -block1.vx`）。
+
+#### （2）连续碰撞检测（CCD）
+通过迭代检测一个时间步内的“物块-墙壁”和“物块-物块”碰撞，优先处理最近碰撞：
+1. 计算到墙壁的碰撞时间（`timeToWall`）和到另一物块的碰撞时间（`timeToBlock`）。
+2. 移动物块到最近碰撞位置，处理碰撞并更新速度。
+3. 剩余时间继续迭代，直到无碰撞或达到最大迭代次数（`MAX_CCD_ITERATIONS=1e9`）。
+
+#### （3）自适应时间步长
+根据物块速度和质量幂次动态调整`dt`，确保每步移动不超过物块宽度的1/4（避免穿透）：
+```c
+long double dt = 1.0L / powl(10.0L, (long double)massRatioPower / 4.0L);
+long double speedBasedDt = (long double)BLOCK_WIDTH / (maxSpeed * 4.0L);
+dt = min(dt, speedBasedDt);
 ```
-Mass ratio exponent n = 4
-Theoretical collisions ≈ 314
-Simulated collisions   = 314
-Error                  = 0.00%
-```
 
----
 
-## 🧮 Theory Behind
+### 2. 高精度与性能优化
+- **数据类型**：使用`long double`存储所有物理量，避免`double`在高幂次下的精度丢失。
+- **高精度π**：自定义`M_PI_L`（3.1415926535...），比标准库`M_PI`精度更高。
+- **大n近似**：当`n>LARGE_N_THRESHOLD=22`时，直接使用理论值`π×10ⁿ/²`作为碰撞次数，避免高频碰撞导致的性能瓶颈。
 
-This project is based on a well-known mathematical curiosity:  
-When two blocks collide elastically with each other and a wall, the number of collisions encodes digits of **π**.  
-For a mass ratio of `10^n : 1`, the total number of collisions is approximately:
 
-\[
-\pi \times 10^{n/2}
-\]
+### 3. 可视化模块
+- **场景绘制**：批量绘图（`BeginBatchDraw()`/`EndBatchDraw()`）避免闪烁，绘制墙壁（灰色矩形）、地面（白色直线）、物块（红色/蓝色矩形）。
+- **信息显示**：动态显示质量比、碰撞次数、理论值、误差，模拟结束后显示最终结果。
+- **启动UI**：5秒倒计时+操作说明，提升用户体验。
 
-This provides a beautiful bridge between **classical mechanics** and **pure mathematics**.
 
----
+## 常见问题（FAQ）
+1. **报错“graphics.h: No such file or directory”**  
+   原因：未安装EasyX图形库。解决方案：从[EasyX官网](https://easyx.cn/)下载对应编译器的版本并安装，确保`graphics.h`在编译器的包含路径中。
 
-## 📊 Example Visualization
+2. **MinGW编译报错“undefined reference to xxx”**  
+   原因：未链接EasyX或数学库。解决方案：编译命令添加`-leasyx -lm`（`-leasyx`链接EasyX，`-lm`链接数学库）。
 
-- Wall on the left, ground at the bottom  
-- Red block (mass = 1) near the wall  
-- Blue block (mass = 10^n) moving left  
-- Collisions are animated in real-time  
+3. **高n值（如n=30）时程序无响应**  
+   原因：n>22时程序已自动使用解析近似，若仍卡顿，可能是终端输入后图形窗口未及时刷新。解决方案：等待1-2秒，或按任意键触发结果显示。
 
----
+4. **碰撞次数与理论值误差较大**  
+   原因：n为奇数时理论关系不成立（程序提示“n为偶数才有规律”）。解决方案：输入偶数n（如2、4、6），误差通常小于0.01%。
 
-## 📜 License
 
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.  
-(You can replace this with Apache 2.0, GPL, or another license depending on your choice.)
+## 许可证（MIT License）
+Copyright (c) [2025] [CPX]
 
----
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, subject to the following conditions:
 
-## 🙌 Acknowledgements
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-- Inspired by the "Pi by Collisions" problem popularized by Grant Sanderson (3Blue1Brown).  
-- Uses [EasyX](https://easyx.cn/) for graphics rendering.  
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
----
 
-## 🔮 Future Improvements
-
-- Cross-platform support (replace EasyX with SDL/OpenGL)  
-- Performance optimization for extremely large `n`  
-- Interactive UI with adjustable parameters  
-- Export simulation data for analysis  
-
----
+## 联系方式
+若遇到问题或有优化建议，可通过以下方式反馈：
+- 邮箱：cpx5210375@gmail.com（替换为你的邮箱）
+- GitHub：
