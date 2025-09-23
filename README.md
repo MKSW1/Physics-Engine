@@ -1,5 +1,3 @@
----
-
 ```markdown
 # Elastic Collision π Simulation
 
