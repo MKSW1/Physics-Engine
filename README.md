@@ -1,11 +1,16 @@
-```markdown
-# Elastic Collision π Simulation
+README 
 
-A physics simulation and visualization project that demonstrates the fascinating relationship between **elastic collisions** and the mathematical constant **π**.  
+---
+
+```markdown
+# ⚛️ Elastic Collision π Simulation
+
+A physics-based simulation and visualization project that reveals the fascinating connection between **elastic collisions** and the mathematical constant **π**.  
+
 By simulating two blocks colliding with each other and with a wall, the total number of collisions approximates:
 
 \[
-\text{Collisions} \approx \pi \times 10^{n/2}
+\text{Collisions} \;\approx\; \pi \times 10^{n/2}
 \]
 
 where `n` is the exponent of the mass ratio between the two blocks.
@@ -14,12 +19,12 @@ where `n` is the exponent of the mass ratio between the two blocks.
 
 ## ✨ Features
 
-- 🔹 **High-precision physics engine** using `long double` for accurate calculations  
-- 🔹 **Adaptive time-stepping** and **continuous collision detection (CCD)** to prevent tunneling  
-- 🔹 **Visualization** with EasyX graphics for real-time animation of collisions  
-- 🔹 **Dynamic statistics display**: collision count, theoretical value, and error margin  
-- 🔹 **Analytical approximation** for large mass ratios to improve performance  
-- 🔹 **Educational value**: illustrates the surprising connection between physics and mathematics  
+- ⚡ **High-precision physics engine** using `long double` for accurate calculations  
+- ⏱️ **Adaptive time-stepping** with **continuous collision detection (CCD)** to prevent tunneling  
+- 🎨 **Real-time visualization** powered by EasyX graphics  
+- 📊 **Dynamic statistics display**: collision count, theoretical value, and error margin  
+- 📈 **Analytical approximation** for large mass ratios to improve performance  
+- 🎓 **Educational value**: demonstrates the surprising link between physics and mathematics  
 
 ---
 
