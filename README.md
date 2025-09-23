@@ -140,5 +140,5 @@ SOFTWARE.
 
 ## 联系方式
 若遇到问题或有优化建议，可通过以下方式反馈：
-- 邮箱：cpx5210375@gmail.com（替换为你的邮箱）
-- GitHub：
+- 邮箱：cpx5210375@gmail.com
+- GitHub：https://github.com/HaiKuoTianKong-Error/Physics-Engine/tree/master
