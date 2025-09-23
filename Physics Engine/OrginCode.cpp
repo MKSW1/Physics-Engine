@@ -5,138 +5,143 @@
 #include <windows.h>
 #include <float.h>
 #include <ctime>
-// ÔÊĞíÊ¹ÓÃÊıÑ§³£Á¿
+
+// å…è®¸ä½¿ç”¨æ•°å­¦å¸¸é‡
 #define _USE_MATH_DEFINES
-// ¸ß¾«¶È¦Ğ³£Á¿£¬Ê¹ÓÃlong double×ÖÃæÁ¿ÒÔ±£Áô¸ü¶à¾«¶È
+// é«˜ç²¾åº¦Ï€å¸¸é‡ï¼Œä½¿ç”¨long doubleå­—é¢é‡ä»¥ä¿ç•™æ›´å¤šç²¾åº¦
 const long double M_PI_L = 3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067982148086513282306647093844609550582231725359408128481117450284102701938521105559644622948954930381L;
-// ÎïÀí³£Á¿¶¨Òå
-#define WALL_X 50        // Ç½±ÚÎ»ÖÃ
-#define GROUND_Y 400     // µØÃæÎ»ÖÃ
-#define BLOCK_WIDTH 40   // Îï¿é¿í¶È
-#define BLOCK_HEIGHT 40  // Îï¿é¸ß¶È
-#define EPSILON 1e-10    // ¸¡µã±È½ÏãĞÖµ
-#define HIGH_PRECISION_EPSILON 1e-18  // ¸ß¾«¶ÈãĞÖµ£¨ÊÊÅä´óÖÊÁ¿±È¸¡µãÎó²î£©
-#define MAX_CCD_ITERATIONS 1000000000    // ÌáÉıCCD×î´óµü´ú´ÎÊı£¨Ö§³Ö¸ßÃİ´ÎÅö×²¼ÆÊı£¬±£ÏÕÆğ¼û£©
-#define MAX_MASS_POWER 36             // ÏŞÖÆ×î´óÃİ´Î£¨±ÜÃâ³¬³ödouble¾«¶È¼«ÏŞ£©
-#define LARGE_N_THRESHOLD 22           // ĞÂÔö£º´ónãĞÖµ£¬µ±n > ´ËÖµÊ±£¬Ê¹ÓÃ½âÎö½üËÆ£¨¸Ä½øµã£º´¦ÀíÈÎÒân£©
-// Îï¿é½á¹¹Ìå
+
+// ç‰©ç†å¸¸é‡å®šä¹‰
+#define WALL_X 50        // å¢™å£ä½ç½®
+#define GROUND_Y 400     // åœ°é¢ä½ç½®
+#define BLOCK_WIDTH 40   // ç‰©å—å®½åº¦
+#define BLOCK_HEIGHT 40  // ç‰©å—é«˜åº¦
+#define EPSILON 1e-10    // æµ®ç‚¹æ¯”è¾ƒé˜ˆå€¼
+#define HIGH_PRECISION_EPSILON 1e-18  // é«˜ç²¾åº¦é˜ˆå€¼ï¼ˆé€‚é…å¤§è´¨é‡æ¯”æµ®ç‚¹è¯¯å·®ï¼‰
+#define MAX_CCD_ITERATIONS 1000000000    // æå‡CCDæœ€å¤§è¿­ä»£æ¬¡æ•°ï¼ˆæ”¯æŒé«˜å¹‚æ¬¡ç¢°æ’è®¡æ•°ï¼Œä¿é™©èµ·è§ï¼‰
+#define MAX_MASS_POWER 36             // é™åˆ¶æœ€å¤§å¹‚æ¬¡ï¼ˆé¿å…è¶…å‡ºdoubleç²¾åº¦æé™ï¼‰
+#define LARGE_N_THRESHOLD 22           // æ–°å¢ï¼šå¤§né˜ˆå€¼ï¼Œå½“n > æ­¤å€¼æ—¶ï¼Œä½¿ç”¨è§£æè¿‘ä¼¼ï¼ˆæ”¹è¿›ç‚¹ï¼šå¤„ç†ä»»æ„nï¼‰
+
+// ç‰©å—ç»“æ„ä½“
 typedef struct {
-    long double mass;     // ¸ÄÓÃlong doubleÌáÉıÖÊÁ¿´æ´¢¾«¶È
-    long double x;        // ¸ÄÓÃlong doubleÌáÉıÎ»ÖÃ¼ÆËã¾«¶È
-    long double vx;       // ¸ÄÓÃlong doubleÌáÉıËÙ¶È¼ÆËã¾«¶È
-    int color;            // ÏÔÊ¾ÑÕÉ«
+    long double mass;     // æ”¹ç”¨long doubleæå‡è´¨é‡å­˜å‚¨ç²¾åº¦
+    long double x;        // æ”¹ç”¨long doubleæå‡ä½ç½®è®¡ç®—ç²¾åº¦
+    long double vx;       // æ”¹ç”¨long doubleæå‡é€Ÿåº¦è®¡ç®—ç²¾åº¦
+    int color;            // æ˜¾ç¤ºé¢œè‰²
 } Block;
-// È«¾Ö±äÁ¿
+
+// å…¨å±€å˜é‡
 Block block1, block2;
-long long collisionCount = 0;          // ¸ÄÓÃlong long±ÜÃâÅö×²´ÎÊıÒç³ö
-int massRatioPower = 0;                // 10µÄÃİ´Î£¬±íÊ¾ÖÊÁ¿±ÈÎª10^massRatioPower
-clock_t lastDisplayTime = 0;           // ÉÏ´ÎÏÔÊ¾ĞÅÏ¢µÄÊ±¼ä
-const double DISPLAY_INTERVAL = 0.008;   // µ÷ÕûÏÔÊ¾¼ä¸ô£¨0.008Ãë/´Î£¬±ÜÃâ¸ßÆµË¢ĞÂ¿¨¶Ù£©
-long long prevCollisionCount = 0;      // ÉÏÒ»Ö¡µÄÅö×²´ÎÊı£¨Í¬²½Îªlong long£©
+long long collisionCount = 0;          // æ”¹ç”¨long longé¿å…ç¢°æ’æ¬¡æ•°æº¢å‡º
+int massRatioPower = 0;                // 10çš„å¹‚æ¬¡ï¼Œè¡¨ç¤ºè´¨é‡æ¯”ä¸º10^massRatioPower
+clock_t lastDisplayTime = 0;           // ä¸Šæ¬¡æ˜¾ç¤ºä¿¡æ¯çš„æ—¶é—´
+const double DISPLAY_INTERVAL = 0.008;   // è°ƒæ•´æ˜¾ç¤ºé—´éš”ï¼ˆ0.008ç§’/æ¬¡ï¼Œé¿å…é«˜é¢‘åˆ·æ–°å¡é¡¿ï¼‰
+long long prevCollisionCount = 0;      // ä¸Šä¸€å¸§çš„ç¢°æ’æ¬¡æ•°ï¼ˆåŒæ­¥ä¸ºlong longï¼‰
 long double wsxnn;
-// º¯ÊıÉùÃ÷
+
+// å‡½æ•°å£°æ˜
 void initSimulation();
 void updatePhysics();
-void updatePhysicsWithCCD(long double dt);  // ²ÎÊı¸ÄÎªlong double
-long double calculateAdaptiveTimestep();    // ·µ»ØÖµ¸ÄÎªlong double
+void updatePhysicsWithCCD(long double dt);  // å‚æ•°æ”¹ä¸ºlong double
+long double calculateAdaptiveTimestep();    // è¿”å›å€¼æ”¹ä¸ºlong double
 void drawScene();
 void handleWallCollision();
 void handleBlockCollision();
 void displayDynamicInfo();
 void StartUI();
 void UI();
-void displayFinalResults();  // ĞÂÔö£ºÌáÈ¡×îÖÕ½á¹ûÏÔÊ¾º¯Êı£¬±ãÓÚ´ónÊ±Ö±½Óµ÷ÓÃ
+void displayFinalResults();  // æ–°å¢ï¼šæå–æœ€ç»ˆç»“æœæ˜¾ç¤ºå‡½æ•°ï¼Œä¾¿äºå¤§næ—¶ç›´æ¥è°ƒç”¨
 
 void initSimulation() {
-    // ¼ÆËãÖÊÁ¿±È£¨1:10^massRatioPower£©£¬ÓÃpowlÌáÉı¾«¶È
+    // è®¡ç®—è´¨é‡æ¯”ï¼ˆ1:10^massRatioPowerï¼‰ï¼Œç”¨powlæå‡ç²¾åº¦
     long double massRatio = powl(10.0L, (long double)massRatioPower);
-    // ³õÊ¼»¯Îï¿é£¨ËùÓĞÎïÀíÁ¿ÓÃlong double£©
+    // åˆå§‹åŒ–ç‰©å—ï¼ˆæ‰€æœ‰ç‰©ç†é‡ç”¨long doubleï¼‰
     block1.mass = 1.0L;
-    block1.x = (long double)WALL_X + (long double)BLOCK_WIDTH / 2.0L + 45.0L;  // ÉÔÀëÇ½±Ú
-    block1.vx = 0.0L;  // ³õÊ¼¾²Ö¹
+    block1.x = (long double)WALL_X + (long double)BLOCK_WIDTH / 2.0L + 45.0L;  // ç¨ç¦»å¢™å£
+    block1.vx = 0.0L;  // åˆå§‹é™æ­¢
     block1.color = RED;
 
     block2.mass = massRatio;
-    block2.x = (long double)WALL_X + 350.0L;  // ³õÊ¼Î»ÖÃ
-    block2.vx = wsxnn;  // Ïò×óÔË¶¯£¨ËÙ¶È±£³ÖÊÊÖĞ£¬±ÜÃâ¸ßÃİ´ÎÏÂ¼ÆËã±¬Õ¨£»±£³ÖÒ»ÖÂ£¬ÎŞÂÛn¶àÉÙ£©
+    block2.x = (long double)WALL_X + 350.0L;  // åˆå§‹ä½ç½®
+    block2.vx = wsxnn;  // å‘å·¦è¿åŠ¨ï¼ˆé€Ÿåº¦ä¿æŒé€‚ä¸­ï¼Œé¿å…é«˜å¹‚æ¬¡ä¸‹è®¡ç®—çˆ†ç‚¸ï¼›ä¿æŒä¸€è‡´ï¼Œæ— è®ºnå¤šå°‘ï¼‰
     block2.color = BLUE;
 
     collisionCount = 0;
 }
 
 long double calculateAdaptiveTimestep() {
-    // »ù´¡Ê±¼ä²½³¤£¨ËæÖÊÁ¿Ãİ´Î¶¯Ì¬¼õĞ¡£¬ÊÊÅä¸ßÃİ´Î¸ßÆµÅö×²£©
+    // åŸºç¡€æ—¶é—´æ­¥é•¿ï¼ˆéšè´¨é‡å¹‚æ¬¡åŠ¨æ€å‡å°ï¼Œé€‚é…é«˜å¹‚æ¬¡é«˜é¢‘ç¢°æ’ï¼‰
     long double dt = 1.0L / powl(10.0L, (long double)massRatioPower / 4.0L);
-    // ËÙ¶ÈÔ¼Êø£ºÃ¿²½ÒÆ¶¯²»³¬¹ıÎï¿é1/4¿í¶È£¨±ÜÃâ´©Í¸£©
+    // é€Ÿåº¦çº¦æŸï¼šæ¯æ­¥ç§»åŠ¨ä¸è¶…è¿‡ç‰©å—1/4å®½åº¦ï¼ˆé¿å…ç©¿é€ï¼‰
     long double maxSpeed = fabsl(block1.vx) > fabsl(block2.vx) ? fabsl(block1.vx) : fabsl(block2.vx);
     if (maxSpeed > 0.0L) {
         long double speedBasedDt = (long double)BLOCK_WIDTH / (maxSpeed * 4.0L);
         dt = dt < speedBasedDt ? dt : speedBasedDt;
     }
-    // ×îĞ¡Ê±¼ä²½³¤±£»¤£¨±ÜÃâ¹ıĞ¡µ¼ÖÂĞÔÄÜÎÊÌâ£©
+    // æœ€å°æ—¶é—´æ­¥é•¿ä¿æŠ¤ï¼ˆé¿å…è¿‡å°å¯¼è‡´æ€§èƒ½é—®é¢˜ï¼‰
     return dt < 1e-12L ? 1e-12L : dt;
 }
 
-// µü´úÊµÏÖCCD£¨ÊÊÅälong double¾«¶È£¬´¦ÀíÒ»¸ödtÄÚµÄËùÓĞÅö×²£©
+// è¿­ä»£å®ç°CCDï¼ˆé€‚é…long doubleç²¾åº¦ï¼Œå¤„ç†ä¸€ä¸ªdtå†…çš„æ‰€æœ‰ç¢°æ’ï¼‰
 void updatePhysicsWithCCD(long double dt) {
     long double remainingTime = dt;
     int iterations = 0;
     while (remainingTime > HIGH_PRECISION_EPSILON && iterations < MAX_CCD_ITERATIONS) {
-        // 1. ¼ÆËãµ½Ç½±ÚÅö×²µÄÊ±¼ä£¨½öÎï¿é1¿ÉÄÜ×²Ç½£©
+        // 1. è®¡ç®—åˆ°å¢™å£ç¢°æ’çš„æ—¶é—´ï¼ˆä»…ç‰©å—1å¯èƒ½æ’å¢™ï¼‰
         long double timeToWall = LDBL_MAX;
-        if (block1.vx < -HIGH_PRECISION_EPSILON) {  // ±ÜÃâÎ¢Ğ¡¸ºËÙ¶ÈÎóÅĞ
+        if (block1.vx < -HIGH_PRECISION_EPSILON) {  // é¿å…å¾®å°è´Ÿé€Ÿåº¦è¯¯åˆ¤
             long double wallCollisionPos = (long double)WALL_X + (long double)BLOCK_WIDTH / 2.0L;
             timeToWall = (wallCollisionPos - block1.x) / block1.vx;
-            timeToWall = timeToWall < 0.0L ? LDBL_MAX : timeToWall;  // ¹ıÂË¹ıÈ¥Ê±¼ä
+            timeToWall = timeToWall < 0.0L ? LDBL_MAX : timeToWall;  // è¿‡æ»¤è¿‡å»æ—¶é—´
         }
 
-        // 2. ¼ÆËãÁ½Îï¿éÅö×²µÄÊ±¼ä£¨½öÎï¿é1ËÙ¶È>Îï¿é2Ê±¿ÉÄÜÅö×²£©
+        // 2. è®¡ç®—ä¸¤ç‰©å—ç¢°æ’çš„æ—¶é—´ï¼ˆä»…ç‰©å—1é€Ÿåº¦>ç‰©å—2æ—¶å¯èƒ½ç¢°æ’ï¼‰
         long double timeToBlock = LDBL_MAX;
-        if (block1.vx - block2.vx > HIGH_PRECISION_EPSILON) {  // ËÙ¶È²îÎªÕı²Å¿ÉÄÜÅö×²
+        if (block1.vx - block2.vx > HIGH_PRECISION_EPSILON) {  // é€Ÿåº¦å·®ä¸ºæ­£æ‰å¯èƒ½ç¢°æ’
             long double collisionGap = block2.x - block1.x - (long double)BLOCK_WIDTH;
-            if (collisionGap < HIGH_PRECISION_EPSILON) {  // ÒÑÖØµş£¬Á¢¼´´¦Àí
+            if (collisionGap < HIGH_PRECISION_EPSILON) {  // å·²é‡å ï¼Œç«‹å³å¤„ç†
                 timeToBlock = 0.0L;
             }
             else {
                 timeToBlock = collisionGap / (block1.vx - block2.vx);
             }
-            timeToBlock = timeToBlock < 0.0L ? LDBL_MAX : timeToBlock;  // ¹ıÂË¹ıÈ¥Ê±¼ä
+            timeToBlock = timeToBlock < 0.0L ? LDBL_MAX : timeToBlock;  // è¿‡æ»¤è¿‡å»æ—¶é—´
         }
 
-        // 3. È·¶¨×î½üÅö×²Ê±¼ä
+        // 3. ç¡®å®šæœ€è¿‘ç¢°æ’æ—¶é—´
         long double nextCollision = timeToWall < timeToBlock ? timeToWall : timeToBlock;
 
-        // 4. ÎŞÅö×²£ºÖ±½Ó¸üĞÂÎ»ÖÃ
+        // 4. æ— ç¢°æ’ï¼šç›´æ¥æ›´æ–°ä½ç½®
         if (nextCollision > remainingTime + HIGH_PRECISION_EPSILON || nextCollision <= 0.0L) {
             block1.x += block1.vx * remainingTime;
             block2.x += block2.vx * remainingTime;
             break;
         }
 
-        // 5. ÓĞÅö×²£ºÏÈ¸üĞÂµ½Åö×²Î»ÖÃ£¬ÔÙ´¦ÀíÅö×²
-        if (nextCollision > HIGH_PRECISION_EPSILON) {  // ÓĞÊ±¼ä²î£¬ÏÈÒÆ¶¯µ½Åö×²Ç°
+        // 5. æœ‰ç¢°æ’ï¼šå…ˆæ›´æ–°åˆ°ç¢°æ’ä½ç½®ï¼Œå†å¤„ç†ç¢°æ’
+        if (nextCollision > HIGH_PRECISION_EPSILON) {  // æœ‰æ—¶é—´å·®ï¼Œå…ˆç§»åŠ¨åˆ°ç¢°æ’å‰
             block1.x += block1.vx * nextCollision;
             block2.x += block2.vx * nextCollision;
         }
 
-        // 6. ´¦Àí¾ßÌåÅö×²ÀàĞÍ
+        // 6. å¤„ç†å…·ä½“ç¢°æ’ç±»å‹
         if (nextCollision == timeToWall) {
-            // Ç½±ÚÅö×²£¨µ¯ĞÔÅö×²£¬ËÙ¶È·´Ïò£©
+            // å¢™å£ç¢°æ’ï¼ˆå¼¹æ€§ç¢°æ’ï¼Œé€Ÿåº¦åå‘ï¼‰
             handleWallCollision();
             collisionCount++;
         }
         else {
-            // Îï¿éÅö×²£¨µ¯ĞÔÅö×²¹«Ê½£¬ÓÃlong double¼ÆËã£©
+            // ç‰©å—ç¢°æ’ï¼ˆå¼¹æ€§ç¢°æ’å…¬å¼ï¼Œç”¨long doubleè®¡ç®—ï¼‰
             handleBlockCollision();
             collisionCount++;
         }
 
-        // 7. ¸üĞÂÊ£ÓàÊ±¼äºÍµü´ú´ÎÊı
+        // 7. æ›´æ–°å‰©ä½™æ—¶é—´å’Œè¿­ä»£æ¬¡æ•°
         remainingTime -= nextCollision;
         iterations++;
     }
 
-    // µ÷ÊÔ¾¯¸æ£º³¬¹ı×î´óµü´ú´ÎÊı£¨¸ßÃİ´ÎÊ±¿ÉÊÊµ±ÌáÉıMAX_CCD_ITERATIONS£©
+    // è°ƒè¯•è­¦å‘Šï¼šè¶…è¿‡æœ€å¤§è¿­ä»£æ¬¡æ•°ï¼ˆé«˜å¹‚æ¬¡æ—¶å¯é€‚å½“æå‡MAX_CCD_ITERATIONSï¼‰
     if (iterations >= MAX_CCD_ITERATIONS) {
         printf("Warning: Reached maximum CCD iterations (remainingTime: %.2Le)\n", remainingTime);
     }
@@ -148,58 +153,58 @@ void updatePhysics() {
 }
 
 void handleWallCollision() {
-    // Î»ÖÃĞ£Õı£ºÈ·±£²»´©Ç½
+    // ä½ç½®æ ¡æ­£ï¼šç¡®ä¿ä¸ç©¿å¢™
     long double wallLimit = (long double)WALL_X + (long double)BLOCK_WIDTH / 2.0L;
     if (block1.x < wallLimit - HIGH_PRECISION_EPSILON) {
         block1.x = wallLimit;
     }
-    // ËÙ¶È·´Ïò£¨µ¯ĞÔÅö×²£¬ÎŞÄÜÁ¿ËğÊ§£©
+    // é€Ÿåº¦åå‘ï¼ˆå¼¹æ€§ç¢°æ’ï¼Œæ— èƒ½é‡æŸå¤±ï¼‰
     block1.vx = -block1.vx;
 }
 
 void handleBlockCollision() {
-    // 1. Î»ÖÃĞ£Õı£ºÏû³ıÖØµş£¨°´ÖÊÁ¿±ÈÀı·ÖÀë£¬±ÜÃâ´©Í¸£©
+    // 1. ä½ç½®æ ¡æ­£ï¼šæ¶ˆé™¤é‡å ï¼ˆæŒ‰è´¨é‡æ¯”ä¾‹åˆ†ç¦»ï¼Œé¿å…ç©¿é€ï¼‰
     long double overlap = (block1.x + (long double)BLOCK_WIDTH / 2.0L) - (block2.x - (long double)BLOCK_WIDTH / 2.0L);
     if (overlap > HIGH_PRECISION_EPSILON) {
         long double totalMass = block1.mass + block2.mass;
-        if (totalMass > HIGH_PRECISION_EPSILON) {  // ±ÜÃâ³ıÒÔÁã£¨ÀíÂÛÉÏmass>=1£©
+        if (totalMass > HIGH_PRECISION_EPSILON) {  // é¿å…é™¤ä»¥é›¶ï¼ˆç†è®ºä¸Šmass>=1ï¼‰
             block1.x -= overlap * (block2.mass / totalMass);
             block2.x += overlap * (block1.mass / totalMass);
         }
     }
 
-    // 2. µ¯ĞÔÅö×²ËÙ¶È¼ÆËã£¨ÓÃlong double±£Áô¾«¶È£©
+    // 2. å¼¹æ€§ç¢°æ’é€Ÿåº¦è®¡ç®—ï¼ˆç”¨long doubleä¿ç•™ç²¾åº¦ï¼‰
     long double m1 = block1.mass;
     long double m2 = block2.mass;
     long double v1 = block1.vx;
     long double v2 = block2.vx;
     long double totalMass = m1 + m2;
 
-    if (totalMass > HIGH_PRECISION_EPSILON) {  // ±ÜÃâ³ıÒÔÁã
+    if (totalMass > HIGH_PRECISION_EPSILON) {  // é¿å…é™¤ä»¥é›¶
         block1.vx = ((m1 - m2) * v1 + 2.0L * m2 * v2) / totalMass;
         block2.vx = (2.0L * m1 * v1 + (m2 - m1) * v2) / totalMass;
     }
 
-    // 3. ËÙ¶ÈãĞÖµ¹ıÂË£º±ÜÃâÎ¢Ğ¡ËÙ¶Èµ¼ÖÂÎŞÏŞÅö×²Ñ­»·
+    // 3. é€Ÿåº¦é˜ˆå€¼è¿‡æ»¤ï¼šé¿å…å¾®å°é€Ÿåº¦å¯¼è‡´æ— é™ç¢°æ’å¾ªç¯
     if (fabsl(block1.vx) < 1e-15L) block1.vx = 0.0L;
     if (fabsl(block2.vx) < 1e-15L) block2.vx = 0.0L;
 }
 
 void drawScene() {
-    BeginBatchDraw();  // ¿ªÆôÅúÁ¿»æÍ¼£¨±ÜÃâÉÁË¸£©
-    cleardevice();     // ÇåÆÁ
-    settextstyle(24, 0, "Consolas");  // µ÷Õû×ÖÌå´óĞ¡£¨ÊÊÅä¸ü¶àĞÅÏ¢ÏÔÊ¾£©
-    settextcolor(WHITE);              // Í³Ò»ÎÄ×ÖÑÕÉ«£¨ÔöÇ¿¿É¶ÁĞÔ£©
+    BeginBatchDraw();  // å¼€å¯æ‰¹é‡ç»˜å›¾ï¼ˆé¿å…é—ªçƒï¼‰
+    cleardevice();     // æ¸…å±
+    settextstyle(24, 0, "Consolas");  // è°ƒæ•´å­—ä½“å¤§å°ï¼ˆé€‚é…æ›´å¤šä¿¡æ¯æ˜¾ç¤ºï¼‰
+    settextcolor(WHITE);              // ç»Ÿä¸€æ–‡å­—é¢œè‰²ï¼ˆå¢å¼ºå¯è¯»æ€§ï¼‰
 
-    // 1. »æÖÆ±ß½ç£¨Ç½±Ú+µØÃæ£©
-    // Ç½±Ú£¨»ÒÉ«¾ØĞÎ£©
+    // 1. ç»˜åˆ¶è¾¹ç•Œï¼ˆå¢™å£+åœ°é¢ï¼‰
+    // å¢™å£ï¼ˆç°è‰²çŸ©å½¢ï¼‰
     setfillcolor(LIGHTGRAY);
     fillrectangle(WALL_X - 5, GROUND_Y - 100, WALL_X + 5, GROUND_Y);
-    // µØÃæ£¨°×É«Ö±Ïß£©
+    // åœ°é¢ï¼ˆç™½è‰²ç›´çº¿ï¼‰
     line(WALL_X, GROUND_Y, getwidth() - 50, GROUND_Y);
 
-    // 2. »æÖÆÎï¿é£¨ºìÉ«£ºblock1£¬À¶É«£ºblock2£©
-    // Îï¿é1
+    // 2. ç»˜åˆ¶ç‰©å—ï¼ˆçº¢è‰²ï¼šblock1ï¼Œè“è‰²ï¼šblock2ï¼‰
+    // ç‰©å—1
     setfillcolor(block1.color);
     fillrectangle(
         (int)(block1.x - (long double)BLOCK_WIDTH / 2.0L),
@@ -207,7 +212,7 @@ void drawScene() {
         (int)(block1.x + (long double)BLOCK_WIDTH / 2.0L),
         GROUND_Y
     );
-    // Îï¿é2
+    // ç‰©å—2
     setfillcolor(block2.color);
     fillrectangle(
         (int)(block2.x - (long double)BLOCK_WIDTH / 2.0L),
@@ -216,12 +221,12 @@ void drawScene() {
         GROUND_Y
     );
 
-    // 3. »æÖÆ¹Ì¶¨ĞÅÏ¢£¨ÖÊÁ¿±È£©
+    // 3. ç»˜åˆ¶å›ºå®šä¿¡æ¯ï¼ˆè´¨é‡æ¯”ï¼‰
     char massBuf[64];
-    sprintf(massBuf, "ÖÊÁ¿±È: 1 : 10^%d", massRatioPower);
+    sprintf(massBuf, "è´¨é‡æ¯”: 1 : 10^%d", massRatioPower);
     outtextxy(50, 50, massBuf);
 
-    // 4. »æÖÆ¶¯Ì¬ĞÅÏ¢£¨Åö×²´ÎÊı¡¢ÀíÂÛÖµ¡¢Îó²î£©
+    // 4. ç»˜åˆ¶åŠ¨æ€ä¿¡æ¯ï¼ˆç¢°æ’æ¬¡æ•°ã€ç†è®ºå€¼ã€è¯¯å·®ï¼‰
     clock_t currentTime = clock();
     double elapsed = (double)(currentTime - lastDisplayTime) / CLOCKS_PER_SEC;
     if (elapsed >= DISPLAY_INTERVAL || collisionCount != prevCollisionCount) {
@@ -230,107 +235,107 @@ void drawScene() {
         prevCollisionCount = collisionCount;
     }
 
-    EndBatchDraw();  // Ìá½»»æÍ¼£¨È·±£ÏÔÊ¾ÉúĞ§£©
+    EndBatchDraw();  // æäº¤ç»˜å›¾ï¼ˆç¡®ä¿æ˜¾ç¤ºç”Ÿæ•ˆï¼‰
 }
 
 void displayDynamicInfo() {
     BeginBatchDraw();
-    char infoBuf[256];  // À©´ó»º³åÇø£¨ÊÊÅä³¤Êı×ÖÏÔÊ¾£©
-    long double theoreticalValue = M_PI_L * powl(10.0L, (long double)massRatioPower / 2.0L);  // Í³Ò»¼ÆËãÀíÂÛÖµ£¨¦Ğ * 10^{n/2}£©
+    char infoBuf[256];  // æ‰©å¤§ç¼“å†²åŒºï¼ˆé€‚é…é•¿æ•°å­—æ˜¾ç¤ºï¼‰
+    long double theoreticalValue = M_PI_L * powl(10.0L, (long double)massRatioPower / 2.0L);  // ç»Ÿä¸€è®¡ç®—ç†è®ºå€¼ï¼ˆÏ€ * 10^{n/2}ï¼‰
 
-    long long collisionTheoretical = (long long)floorl(theoreticalValue);  // ÀíÂÛÖµÈ¡Õû
+    long long collisionTheoretical = (long long)floorl(theoreticalValue);  // ç†è®ºå€¼å–æ•´
 
-    // 1. ÏÔÊ¾Åö×²´ÎÊı£¨Ö§³Ölong long£©
-    sprintf(infoBuf, "Åö×²´ÎÊı: %lld", collisionCount);
+    // 1. æ˜¾ç¤ºç¢°æ’æ¬¡æ•°ï¼ˆæ”¯æŒlong longï¼‰
+    sprintf(infoBuf, "ç¢°æ’æ¬¡æ•°: %lld", collisionCount);
     outtextxy(50, 80, infoBuf);
 
-    // 2. ÏÔÊ¾ÀíÂÛÖµ£¨ÊÊÅä¸ßÃİ´ÎµÄ´óÊı×Ö£©
-    sprintf(infoBuf, "ÀíÂÛÖµ(¦Ğ*10^(%d/2)): %.8Lf",
+    // 2. æ˜¾ç¤ºç†è®ºå€¼ï¼ˆé€‚é…é«˜å¹‚æ¬¡çš„å¤§æ•°å­—ï¼‰
+    sprintf(infoBuf, "ç†è®ºå€¼(Ï€*10^(%d/2)): %.8Lf",
         massRatioPower, theoreticalValue);
-    sprintf(infoBuf, "È¡Õû: %lld",
+    sprintf(infoBuf, "å–æ•´: %lld",
         collisionTheoretical);
     outtextxy(50, 110, infoBuf);
 
-    // 3. ÏÔÊ¾Îó²î£¨±ÜÃâÀíÂÛÖµÎª0µÄÇé¿ö£©
+    // 3. æ˜¾ç¤ºè¯¯å·®ï¼ˆé¿å…ç†è®ºå€¼ä¸º0çš„æƒ…å†µï¼‰
     if (collisionTheoretical != 0) {
         long double errorPercent = fabsl((long double)collisionCount - theoreticalValue) / theoreticalValue * 100.0L;
-        sprintf(infoBuf, "Îó²î(Ğ¡¸ÅÂÊ²»¼Æ£¬10^-4ÒÔÏÂ): %.2Lf%%", errorPercent);
+        sprintf(infoBuf, "è¯¯å·®(å°æ¦‚ç‡ä¸è®¡ï¼Œ10^-4ä»¥ä¸‹): %.2Lf%%", errorPercent);
     }
     else {
-        sprintf(infoBuf, "Îó²î: %lld (N/A£¬ÀíÂÛÖµÎª0)", collisionCount - collisionTheoretical);
+        sprintf(infoBuf, "è¯¯å·®: %lld (N/Aï¼Œç†è®ºå€¼ä¸º0)", collisionCount - collisionTheoretical);
     }
     outtextxy(50, 140, infoBuf);
 
-    // 4. Åö×²Íê³ÉÌáÊ¾£¨ÅĞ¶ÏÌõ¼şÊÊÅälong double£©
+    // 4. ç¢°æ’å®Œæˆæç¤ºï¼ˆåˆ¤æ–­æ¡ä»¶é€‚é…long doubleï¼‰
     if (block1.vx >= -HIGH_PRECISION_EPSILON &&
         block2.vx >= block1.vx - HIGH_PRECISION_EPSILON &&
         (block2.x - block1.x) > (long double)BLOCK_WIDTH * 1.1L) {
-        outtextxy(50, 170, "ËùÓĞÅö×²ÒÑÍê³É!");
+        outtextxy(50, 170, "æ‰€æœ‰ç¢°æ’å·²å®Œæˆ!");
     }
     EndBatchDraw();
 }
 
-// ĞÂÔö£ºÌáÈ¡×îÖÕ½á¹ûÏÔÊ¾º¯Êı£¨ÓÃÓÚÄ£Äâ½áÊø»ò´ónÖ±½ÓÏÔÊ¾£©
+// æ–°å¢ï¼šæå–æœ€ç»ˆç»“æœæ˜¾ç¤ºå‡½æ•°ï¼ˆç”¨äºæ¨¡æ‹Ÿç»“æŸæˆ–å¤§nç›´æ¥æ˜¾ç¤ºï¼‰
 void displayFinalResults() {
     BeginBatchDraw();
     cleardevice();
     settextstyle(24, 0, "Consolas");
     settextcolor(WHITE);
 
-    // 1. ¹Ì¶¨ĞÅÏ¢
+    // 1. å›ºå®šä¿¡æ¯
     char massBuf[64];
-    sprintf(massBuf, "ÖÊÁ¿±È: 1 : 10^%d", massRatioPower);
+    sprintf(massBuf, "è´¨é‡æ¯”: 1 : 10^%d", massRatioPower);
     outtextxy(50, 50, massBuf);
 
-    // 2. ×îÖÕÅö×²´ÎÊı
+    // 2. æœ€ç»ˆç¢°æ’æ¬¡æ•°
     char finalBuf[256];
-    sprintf(finalBuf, "×îÖÕÅö×²´ÎÊı: %lld", collisionCount);
+    sprintf(finalBuf, "æœ€ç»ˆç¢°æ’æ¬¡æ•°: %lld", collisionCount);
     outtextxy(50, 80, finalBuf);
 
-    // 3. ÀíÂÛÖµÓëÎó²î
+    // 3. ç†è®ºå€¼ä¸è¯¯å·®
     long double theoreticalValue = M_PI_L * powl(10.0L, (long double)massRatioPower / 2.0L);
     long long collisionTheoretical = (long long)floorl(theoreticalValue);
-    sprintf(finalBuf, "ÀíÂÛÖµ(¦Ğ*10^(%d/2)): %.8Lf",
+    sprintf(finalBuf, "ç†è®ºå€¼(Ï€*10^(%d/2)): %.8Lf",
         massRatioPower, theoreticalValue);
-    sprintf(finalBuf, "È¡Õû: %lld",collisionTheoretical);
+    sprintf(finalBuf, "å–æ•´: %lld",collisionTheoretical);
     outtextxy(50, 110, finalBuf);
 
-    // 4. Îó²î¼ÆËã
+    // 4. è¯¯å·®è®¡ç®—
     if (collisionTheoretical != 0) {
         long double errorPercent = fabsl((long double)collisionCount - theoreticalValue) / theoreticalValue * 100.0L;
-        sprintf(finalBuf, "Îó²î(Ğ¡¸ÅÂÊ²»¼Æ£¬10^-4ÒÔÏÂ):%.2Lf%%", errorPercent);
+        sprintf(finalBuf, "è¯¯å·®(å°æ¦‚ç‡ä¸è®¡ï¼Œ10^-4ä»¥ä¸‹):%.2Lf%%", errorPercent);
     }
     else {
-        sprintf(finalBuf, "Îó²î: %lld (N/A£¬ÀíÂÛÖµÎª0)", collisionCount - collisionTheoretical);
+        sprintf(finalBuf, "è¯¯å·®: %lld (N/Aï¼Œç†è®ºå€¼ä¸º0)", collisionCount - collisionTheoretical);
     }
     outtextxy(50, 140, finalBuf);
 
-    // 5. ½áÊøÌáÊ¾£¨´ónÊ±Ìí¼Ó½üËÆËµÃ÷£©
+    // 5. ç»“æŸæç¤ºï¼ˆå¤§næ—¶æ·»åŠ è¿‘ä¼¼è¯´æ˜ï¼‰
     if (massRatioPower > LARGE_N_THRESHOLD) {
-        outtextxy(50, 170, "´ónÊ¹ÓÃ½âÎö½üËÆ! °´ÈÎÒâ¼üÍË³ö...");
+        outtextxy(50, 170, "å¤§nä½¿ç”¨è§£æè¿‘ä¼¼! æŒ‰ä»»æ„é”®é€€å‡º...");
     }
     else {
-        outtextxy(50, 170, "ËùÓĞÅö×²ÒÑ½áÊø! °´ÈÎÒâ¼üÍË³ö...");
+        outtextxy(50, 170, "æ‰€æœ‰ç¢°æ’å·²ç»“æŸ! æŒ‰ä»»æ„é”®é€€å‡º...");
     }
     EndBatchDraw();
 }
 
-// Æô¶¯½çÃæ£¨5Ãëµ¹¼ÆÊ±£©
+// å¯åŠ¨ç•Œé¢ï¼ˆ5ç§’å€’è®¡æ—¶ï¼‰
 void StartUI() {
     cleardevice();
     BeginBatchDraw();
     settextstyle(60, 0, "Consolas");
-    const char* title = "ÎïÀíÒıÇæÑİÊ¾£ºÅö×²¼ÆÊıÓë¦ĞµÄ¹ØÏµ";
+    const char* title = "ç‰©ç†å¼•æ“æ¼”ç¤ºï¼šç¢°æ’è®¡æ•°ä¸Ï€çš„å…³ç³»";
     outtextxy((getwidth() - textwidth(title)) / 2, 50, title);
 
     settextstyle(30, 0, "Consolas");
     const char* instructions[] = {
-        "Îï¿é1£¨ºìÉ«£©ÖÊÁ¿Îª1£¬³õÊ¼¾²Ö¹",
-        "Îï¿é2£¨À¶É«£©ÖÊÁ¿Îª10^%d£¬³õÊ¼Ïò×óÔË¶¯",
-        "Îï¿é1ÓëÇ½±Úµ¯ĞÔÅö×²£¬Îï¿é¼äµ¯ĞÔÅö×²",
-        "¹Û²ìÅö×²´ÎÊıÓëÖÊÁ¿±ÈµÄ¹ØÏµ"
+        "ç‰©å—1ï¼ˆçº¢è‰²ï¼‰è´¨é‡ä¸º1ï¼Œåˆå§‹é™æ­¢",
+        "ç‰©å—2ï¼ˆè“è‰²ï¼‰è´¨é‡ä¸º10^%dï¼Œåˆå§‹å‘å·¦è¿åŠ¨",
+        "ç‰©å—1ä¸å¢™å£å¼¹æ€§ç¢°æ’ï¼Œç‰©å—é—´å¼¹æ€§ç¢°æ’",
+        "è§‚å¯Ÿç¢°æ’æ¬¡æ•°ä¸è´¨é‡æ¯”çš„å…³ç³»"
     };
-    // Ìî³äÖÊÁ¿Ãİ´Îµ½ËµÃ÷ÎÄ×Ö
+    // å¡«å……è´¨é‡å¹‚æ¬¡åˆ°è¯´æ˜æ–‡å­—
     char instBuf[128];
     for (int i = 0; i < 4; i++) {
         if (i == 1) {
@@ -342,15 +347,15 @@ void StartUI() {
         }
     }
 
-    // µ¹¼ÆÊ±ÏÔÊ¾
+    // å€’è®¡æ—¶æ˜¾ç¤º
     for (int t = 5; t > 0; t--) {
         char timerBuf[32];
-        sprintf(timerBuf, "%dsºó¿ªÊ¼...", t);
+        sprintf(timerBuf, "%dsåå¼€å§‹...", t);
         outtextxy(50, 350, timerBuf);
         EndBatchDraw();
         Sleep(1000);
         cleardevice();
-        // ÖØ»æ±êÌâºÍËµÃ÷£¨±ÜÃâµ¹¼ÆÊ±ÉÁË¸£©
+        // é‡ç»˜æ ‡é¢˜å’Œè¯´æ˜ï¼ˆé¿å…å€’è®¡æ—¶é—ªçƒï¼‰
         outtextxy((getwidth() - textwidth(title)) / 2, 50, title);
         for (int i = 0; i < 4; i++) {
             if (i == 1) {
@@ -365,16 +370,16 @@ void StartUI() {
     EndBatchDraw();
 }
 
-// ÖÕ¶Ë²Ù×÷ÌáÊ¾½çÃæ
+// ç»ˆç«¯æ“ä½œæç¤ºç•Œé¢
 void UI() {
     cleardevice();
     BeginBatchDraw();
     settextstyle(60, 0, "Consolas");
-    const char* title = "ÎïÀíÒıÇæÑİÊ¾£ºÅö×²¼ÆÊıÓë¦ĞµÄ¹ØÏµ";
+    const char* title = "ç‰©ç†å¼•æ“æ¼”ç¤ºï¼šç¢°æ’è®¡æ•°ä¸Ï€çš„å…³ç³»";
     outtextxy((getwidth() - textwidth(title)) / 2, 50, title);
 
     settextstyle(35, 0, "Consolas");
-    const char* tip = "ÇëÔÚÖÕ¶ËÖĞÊäÈëÖÊÁ¿±ÈµÄÃİ´În(nÎªÅ¼Êı²ÅÓĞ¹æÂÉ) £¬ÖÊÁ¿±ÈÎª1:10^n";
+    const char* tip = "è¯·åœ¨ç»ˆç«¯ä¸­è¾“å…¥è´¨é‡æ¯”çš„å¹‚æ¬¡n(nä¸ºå¶æ•°æ‰æœ‰è§„å¾‹) ï¼Œè´¨é‡æ¯”ä¸º1:10^n";
     for (int i = 1; i <= 5; i++) {
         outtextxy((getwidth() - textwidth(tip)) / 2, 240 + 50 * i, tip);
     }
@@ -382,74 +387,74 @@ void UI() {
 }
 
 int main() {
-    // ³õÊ¼»¯Í¼ĞÎ´°¿Ú£¨À©´ó¿í¶ÈÖÁ1100£¬ÊÊÅä¸ü¶àÎÄ×ÖÏÔÊ¾£©
+    // åˆå§‹åŒ–å›¾å½¢çª—å£ï¼ˆæ‰©å¤§å®½åº¦è‡³1100ï¼Œé€‚é…æ›´å¤šæ–‡å­—æ˜¾ç¤ºï¼‰
     initgraph(1100, 600);
-    setbkcolor(BLACK);  // ºÚÉ«±³¾°£¨ÔöÇ¿ÎÄ×Ö¶Ô±È¶È£©
+    setbkcolor(BLACK);  // é»‘è‰²èƒŒæ™¯ï¼ˆå¢å¼ºæ–‡å­—å¯¹æ¯”åº¦ï¼‰
 
-    // ÖÕ¶Ë½»»¥£ºÊäÈëÖÊÁ¿Ãİ´Î£¨Ôö¼ÓºÏ·¨ĞÔĞ£Ñé£©
+    // ç»ˆç«¯äº¤äº’ï¼šè¾“å…¥è´¨é‡å¹‚æ¬¡ï¼ˆå¢åŠ åˆæ³•æ€§æ ¡éªŒï¼‰
     printf("=========================================\n");
-    printf("      ÎïÀíÒıÇæÑİÊ¾£ºÅö×²¼ÆÊıÓë¦ĞµÄ¹ØÏµ     \n");
+    printf("      ç‰©ç†å¼•æ“æ¼”ç¤ºï¼šç¢°æ’è®¡æ•°ä¸Ï€çš„å…³ç³»     \n");
     printf("=========================================\n");
-    printf("¹æÔò£º\n");
-    printf("  - Îï¿é1£¨ºì£©ÖÊÁ¿=1£¬³õÊ¼¾²Ö¹\n");
-    printf("  - Îï¿é2£¨À¶£©ÖÊÁ¿=10^n£¬³õÊ¼Ïò×óÔË¶¯\n");
-    printf("  - Åö×²´ÎÊıÀíÂÛÖµ¡Ö¦Ğ¡Á10^(n/2)(nÎªÅ¼Êı²ÅÓĞ¹æÂÉ)\n");
+    printf("è§„åˆ™ï¼š\n");
+    printf("  - ç‰©å—1ï¼ˆçº¢ï¼‰è´¨é‡=1ï¼Œåˆå§‹é™æ­¢\n");
+    printf("  - ç‰©å—2ï¼ˆè“ï¼‰è´¨é‡=10^nï¼Œåˆå§‹å‘å·¦è¿åŠ¨\n");
+    printf("  - ç¢°æ’æ¬¡æ•°ç†è®ºå€¼â‰ˆÏ€Ã—10^(n/2)(nä¸ºå¶æ•°æ‰æœ‰è§„å¾‹)\n");
     printf("=========================================\n");
 
-    UI();  // ÏÔÊ¾Í¼ĞÎ½çÃæÌáÊ¾
+    UI();  // æ˜¾ç¤ºå›¾å½¢ç•Œé¢æç¤º
     while (1) {
-        printf("ÇëÊäÈëÖÊÁ¿±ÈµÄÃİ´În(nÎªÅ¼Êı²ÅÓĞ¹æÂÉ)£º");
+        printf("è¯·è¾“å…¥è´¨é‡æ¯”çš„å¹‚æ¬¡n(nä¸ºå¶æ•°æ‰æœ‰è§„å¾‹)ï¼š");
         if (scanf_s("%d", &massRatioPower) != 1) {
-            // ÊäÈë·ÇÊı×ÖÊ±Çå¿Õ»º³åÇø
+            // è¾“å…¥éæ•°å­—æ—¶æ¸…ç©ºç¼“å†²åŒº
             while (getchar() != '\n');
-            printf("´íÎó£ºÇëÊäÈëÕûÊı£¡\n");
+            printf("é”™è¯¯ï¼šè¯·è¾“å…¥æ•´æ•°ï¼\n");
             continue;
         }
-        // ÏŞÖÆÃİ´Î·¶Î§£¨1¡Ün¡Ü22£¬±ÜÃâ³¬³ölong double¾«¶È£©
+        // é™åˆ¶å¹‚æ¬¡èŒƒå›´ï¼ˆ1â‰¤nâ‰¤22ï¼Œé¿å…è¶…å‡ºlong doubleç²¾åº¦ï¼‰
         if (massRatioPower < 1 || massRatioPower > MAX_MASS_POWER) {
-            printf("´íÎó£ºn±ØĞëÔÚ1~%dÖ®¼ä£¡\n", MAX_MASS_POWER);
+            printf("é”™è¯¯ï¼šnå¿…é¡»åœ¨1~%dä¹‹é—´ï¼\n", MAX_MASS_POWER);
             continue;
         }
-        break;  // ÊäÈëºÏ·¨£¬ÍË³öÑ­»·
+        break;  // è¾“å…¥åˆæ³•ï¼Œé€€å‡ºå¾ªç¯
     }
     if (massRatioPower >= 21) {
-        wsxnn = -(massRatioPower + 1) * 90000000000.0; // ¸ù¾İÖÊÁ¿Ãİ´Îµ÷Õû³õÊ¼ËÙ¶È£¬±ÜÃâ¸ßÃİ´ÎÏÂ¼ÆËã±¬Õ¨
+        wsxnn = -(massRatioPower + 1) * 90000000000.0; // æ ¹æ®è´¨é‡å¹‚æ¬¡è°ƒæ•´åˆå§‹é€Ÿåº¦ï¼Œé¿å…é«˜å¹‚æ¬¡ä¸‹è®¡ç®—çˆ†ç‚¸
     }
     if (massRatioPower >= 16) {
-        wsxnn = -(massRatioPower + 1) * 4.625; // ¸ù¾İÖÊÁ¿Ãİ´Îµ÷Õû³õÊ¼ËÙ¶È£¬±ÜÃâ¸ßÃİ´ÎÏÂ¼ÆËã±¬Õ¨
+        wsxnn = -(massRatioPower + 1) * 4.625; // æ ¹æ®è´¨é‡å¹‚æ¬¡è°ƒæ•´åˆå§‹é€Ÿåº¦ï¼Œé¿å…é«˜å¹‚æ¬¡ä¸‹è®¡ç®—çˆ†ç‚¸
     }
     else if (massRatioPower >= 12) {
-		wsxnn = -3.0; // ÊÊÖĞËÙ¶È£¬±ÜÃâ¹ı¿ìµ¼ÖÂ´©Í¸
+		wsxnn = -3.0; // é€‚ä¸­é€Ÿåº¦ï¼Œé¿å…è¿‡å¿«å¯¼è‡´ç©¿é€
     }
     else{
         if(massRatioPower >= 6)
-        wsxnn = -0.345; // ÊÊÖĞËÙ¶È£¬±ÜÃâ¹ı¿ìµ¼ÖÂ´©Í¸
+        wsxnn = -0.345; // é€‚ä¸­é€Ÿåº¦ï¼Œé¿å…è¿‡å¿«å¯¼è‡´ç©¿é€
         else
-			wsxnn = -0.021; // ÊÊÖĞËÙ¶È£¬±ÜÃâ¹ı¿ìµ¼ÖÂ´©Í¸
+			wsxnn = -0.021; // é€‚ä¸­é€Ÿåº¦ï¼Œé¿å…è¿‡å¿«å¯¼è‡´ç©¿é€
 	}
-    bool isLargeN = (massRatioPower > LARGE_N_THRESHOLD);  // ĞÂÔö£ºÅĞ¶ÏÊÇ·ñ´ón
+    bool isLargeN = (massRatioPower > LARGE_N_THRESHOLD);  // æ–°å¢ï¼šåˆ¤æ–­æ˜¯å¦å¤§n
 
     if (!isLargeN) {
-        // Ğ¡n£ºÕı³£Ä£Äâ
+        // å°nï¼šæ­£å¸¸æ¨¡æ‹Ÿ
         initSimulation();
         StartUI();
         lastDisplayTime = clock();
         prevCollisionCount = collisionCount;
 
-        // Ö÷Ñ­»·£¨Ä£ÄâÔËĞĞ£¬Ê¹ÓÃ×ÔÊÊÓ¦dtÍÆ½øÄ£Äâ£¬°´ÊµÊ±¿ØÖÆ»æÖÆÆµÂÊ£©
+        // ä¸»å¾ªç¯ï¼ˆæ¨¡æ‹Ÿè¿è¡Œï¼Œä½¿ç”¨è‡ªé€‚åº”dtæ¨è¿›æ¨¡æ‹Ÿï¼ŒæŒ‰å®æ—¶æ§åˆ¶ç»˜åˆ¶é¢‘ç‡ï¼‰
         clock_t lastFrameTime = clock();
         bool simulationComplete = false;
         while (!kbhit() && !simulationComplete) {
-            updatePhysics();  // Ê¹ÓÃ×ÔÊÊÓ¦dtÍÆ½øÒ»Ğ¡²½Ä£Äâ£¨È·±£¾«¶ÈºÍĞÔÄÜ£©
+            updatePhysics();  // ä½¿ç”¨è‡ªé€‚åº”dtæ¨è¿›ä¸€å°æ­¥æ¨¡æ‹Ÿï¼ˆç¡®ä¿ç²¾åº¦å’Œæ€§èƒ½ï¼‰
 
-            // ¼ì²éÄ£ÄâÊÇ·ñÍê³É£¨Á½Îï¿é¾ùÏòÓÒÇÒÎŞÖØµş£©
+            // æ£€æŸ¥æ¨¡æ‹Ÿæ˜¯å¦å®Œæˆï¼ˆä¸¤ç‰©å—å‡å‘å³ä¸”æ— é‡å ï¼‰
             if (block1.vx >= -HIGH_PRECISION_EPSILON &&
                 block2.vx >= block1.vx - HIGH_PRECISION_EPSILON &&
                 (block2.x - block1.x) > (long double)BLOCK_WIDTH * 1.1L) {
                 simulationComplete = true;
             }
 
-            // °´ÊµÊ±»æÖÆ£¨Ã¿0.008s ~120fps£¬±ÜÃâ¸ßnÏÂ»æÖÆ¹ıÆµ£©
+            // æŒ‰å®æ—¶ç»˜åˆ¶ï¼ˆæ¯0.008s ~120fpsï¼Œé¿å…é«˜nä¸‹ç»˜åˆ¶è¿‡é¢‘ï¼‰
             clock_t currentTime = clock();
             double elapsedSinceLastFrame = (double)(currentTime - lastFrameTime) / CLOCKS_PER_SEC;
             if (elapsedSinceLastFrame >= 0.008) {
@@ -459,16 +464,16 @@ int main() {
         }
     }
     else {
-        // ´ón£ºÊ¹ÓÃ½âÎö½üËÆ¼ÆËãÅö×²´ÎÊı£¨¸Ä½øµã£ºÖ§³ÖÈÎÒân£¬ÎŞĞèÄ£Äâ£©
+        // å¤§nï¼šä½¿ç”¨è§£æè¿‘ä¼¼è®¡ç®—ç¢°æ’æ¬¡æ•°ï¼ˆæ”¹è¿›ç‚¹ï¼šæ”¯æŒä»»æ„nï¼Œæ— éœ€æ¨¡æ‹Ÿï¼‰
         long double theoreticalValue = M_PI_L * powl(10.0L, (long double)massRatioPower / 2.0L);
         collisionCount = (long long)floorl(theoreticalValue);
-        // ÎŞĞè³õÊ¼»¯¿é»òÔËĞĞÑ­»·£¬Ö±½Ó×¼±¸ÏÔÊ¾
+        // æ— éœ€åˆå§‹åŒ–å—æˆ–è¿è¡Œå¾ªç¯ï¼Œç›´æ¥å‡†å¤‡æ˜¾ç¤º
     }
 
-    // ÎŞÂÛÄ£Äâ»ò½üËÆ£¬¶¼ÏÔÊ¾×îÖÕ½á¹û
+    // æ— è®ºæ¨¡æ‹Ÿæˆ–è¿‘ä¼¼ï¼Œéƒ½æ˜¾ç¤ºæœ€ç»ˆç»“æœ
     displayFinalResults();
 
-    // µÈ´ıÓÃ»§°´¼üÍË³ö
+    // ç­‰å¾…ç”¨æˆ·æŒ‰é”®é€€å‡º
     _getch();
     closegraph();
     return 0;
