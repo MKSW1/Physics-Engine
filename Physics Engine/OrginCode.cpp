@@ -1,10 +1,12 @@
 #include <stdio.h>
-#include <graphics.h>
 #include <conio.h>
 #include <math.h>
 #include <windows.h>
 #include <float.h>
 #include <ctime>
+#include <graphics.h> // 确保此行在所有头文件之后
+#include <io.h>
+#include <fcntl.h>
 
 // 允许使用数学常量
 #define _USE_MATH_DEFINES
@@ -223,7 +225,7 @@ void drawScene() {
 
     // 3. 绘制固定信息（质量比）
     char massBuf[64];
-    sprintf(massBuf, "质量比: 1 : 10^%d", massRatioPower);
+    sprintf(massBuf, "mass ratio: 1 : 10^%d", massRatioPower);
     outtextxy(50, 50, massBuf);
 
     // 4. 绘制动态信息（碰撞次数、理论值、误差）
@@ -246,23 +248,23 @@ void displayDynamicInfo() {
     long long collisionTheoretical = (long long)floorl(theoreticalValue);  // 理论值取整
 
     // 1. 显示碰撞次数（支持long long）
-    sprintf(infoBuf, "碰撞次数: %lld", collisionCount);
+    sprintf(infoBuf, "Number of collisions: %lld", collisionCount);
     outtextxy(50, 80, infoBuf);
 
     // 2. 显示理论值（适配高幂次的大数字）
-    sprintf(infoBuf, "理论值(π*10^(%d/2)): %.8Lf",
+    sprintf(infoBuf, "Theoretical value(π*10^(%d/2)): %.8Lf",
         massRatioPower, theoreticalValue);
-    sprintf(infoBuf, "取整: %lld",
+    sprintf(infoBuf, "rounding: %lld",
         collisionTheoretical);
     outtextxy(50, 110, infoBuf);
 
     // 3. 显示误差（避免理论值为0的情况）
     if (collisionTheoretical != 0) {
         long double errorPercent = fabsl((long double)collisionCount - theoreticalValue) / theoreticalValue * 100.0L;
-        sprintf(infoBuf, "误差(小概率不计，10^-4以下): %.2Lf%%", errorPercent);
+        sprintf(infoBuf, "Error (small probabilities are not counted, below 10^-4): %.2Lf%%", errorPercent);
     }
     else {
-        sprintf(infoBuf, "误差: %lld (N/A，理论值为0)", collisionCount - collisionTheoretical);
+        sprintf(infoBuf, "error: %lld (N/A，The theoretical value is 0)", collisionCount - collisionTheoretical);
     }
     outtextxy(50, 140, infoBuf);
 
@@ -270,7 +272,7 @@ void displayDynamicInfo() {
     if (block1.vx >= -HIGH_PRECISION_EPSILON &&
         block2.vx >= block1.vx - HIGH_PRECISION_EPSILON &&
         (block2.x - block1.x) > (long double)BLOCK_WIDTH * 1.1L) {
-        outtextxy(50, 170, "所有碰撞已完成!");
+        outtextxy(50, 170, "All collisions have been completed!");
     }
     EndBatchDraw();
 }
@@ -284,38 +286,38 @@ void displayFinalResults() {
 
     // 1. 固定信息
     char massBuf[64];
-    sprintf(massBuf, "质量比: 1 : 10^%d", massRatioPower);
+    sprintf(massBuf, "mass ratio: 1 : 10^%d", massRatioPower);
     outtextxy(50, 50, massBuf);
 
     // 2. 最终碰撞次数
     char finalBuf[256];
-    sprintf(finalBuf, "最终碰撞次数: %lld", collisionCount);
+    sprintf(finalBuf, "Final number of collisions: %lld", collisionCount);
     outtextxy(50, 80, finalBuf);
 
     // 3. 理论值与误差
     long double theoreticalValue = M_PI_L * powl(10.0L, (long double)massRatioPower / 2.0L);
     long long collisionTheoretical = (long long)floorl(theoreticalValue);
-    sprintf(finalBuf, "理论值(π*10^(%d/2)): %.8Lf",
+    sprintf(finalBuf, "Theoretical value(π*10^(%d/2)): %.8Lf",
         massRatioPower, theoreticalValue);
-    sprintf(finalBuf, "取整: %lld",collisionTheoretical);
+    sprintf(finalBuf, "rounding: %lld", collisionTheoretical);
     outtextxy(50, 110, finalBuf);
 
     // 4. 误差计算
     if (collisionTheoretical != 0) {
         long double errorPercent = fabsl((long double)collisionCount - theoreticalValue) / theoreticalValue * 100.0L;
-        sprintf(finalBuf, "误差(小概率不计，10^-4以下):%.2Lf%%", errorPercent);
+        sprintf(finalBuf, "Error (small probabilities are not counted, below 10^-4):%.2Lf%%", errorPercent);
     }
     else {
-        sprintf(finalBuf, "误差: %lld (N/A，理论值为0)", collisionCount - collisionTheoretical);
+        sprintf(finalBuf, "error: %lld (N/A，The theoretical value is 0)", collisionCount - collisionTheoretical);
     }
     outtextxy(50, 140, finalBuf);
 
     // 5. 结束提示（大n时添加近似说明）
     if (massRatioPower > LARGE_N_THRESHOLD) {
-        outtextxy(50, 170, "大n使用解析近似! 按任意键退出...");
+        outtextxy(50, 170, "Large n uses analytical approximation!");
     }
     else {
-        outtextxy(50, 170, "所有碰撞已结束! 按任意键退出...");
+        outtextxy(50, 170, "All collisions have ended!");
     }
     EndBatchDraw();
 }
@@ -324,16 +326,16 @@ void displayFinalResults() {
 void StartUI() {
     cleardevice();
     BeginBatchDraw();
-    settextstyle(60, 0, "Consolas");
-    const char* title = "物理引擎演示：碰撞计数与π的关系";
+    settextstyle(33, 0, "Consolas");
+    const char* title = "Physics Engine Demonstration: The Relationship Between Collision Count and pai\n";
     outtextxy((getwidth() - textwidth(title)) / 2, 50, title);
 
-    settextstyle(30, 0, "Consolas");
+    settextstyle(20, 0, "Consolas");
     const char* instructions[] = {
-        "物块1（红色）质量为1，初始静止",
-        "物块2（蓝色）质量为10^%d，初始向左运动",
-        "物块1与墙壁弹性碰撞，物块间弹性碰撞",
-        "观察碰撞次数与质量比的关系"
+        "Block 1 (red) has a mass of 1 and is initially at rest.\n",
+        "Block 2 (blue) has a mass of 10^%d and initially moves to the left.\n",
+        "Block 1 collides elastically with the wall, and the blocks collide elastically with each other.\n",
+        "Observe the relationship between the number of collisions and the mass ratio\n"
     };
     // 填充质量幂次到说明文字
     char instBuf[128];
@@ -350,7 +352,7 @@ void StartUI() {
     // 倒计时显示
     for (int t = 5; t > 0; t--) {
         char timerBuf[32];
-        sprintf(timerBuf, "%ds后开始...", t);
+        sprintf(timerBuf, "%ds after starting...", t);
         outtextxy(50, 350, timerBuf);
         EndBatchDraw();
         Sleep(1000);
@@ -374,12 +376,12 @@ void StartUI() {
 void UI() {
     cleardevice();
     BeginBatchDraw();
-    settextstyle(60, 0, "Consolas");
-    const char* title = "物理引擎演示：碰撞计数与π的关系";
+    settextstyle(33, 0, "Consolas");
+    const char* title = "Physics Engine : The Relationship Between Collision Count and pai\n";
     outtextxy((getwidth() - textwidth(title)) / 2, 50, title);
 
-    settextstyle(35, 0, "Consolas");
-    const char* tip = "请在终端中输入质量比的幂次n(n为偶数才有规律) ，质量比为1:10^n";
+    settextstyle(15, 0, "Consolas");
+    const char* tip = "Please enter the power n of the mass ratio in the terminal (only when n is an even number is there a pattern), and the mass ratio is 1:10^n";
     for (int i = 1; i <= 5; i++) {
         outtextxy((getwidth() - textwidth(tip)) / 2, 240 + 50 * i, tip);
     }
@@ -387,6 +389,8 @@ void UI() {
 }
 
 int main() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
     // 初始化图形窗口（扩大宽度至1100，适配更多文字显示）
     initgraph(1100, 600);
     setbkcolor(BLACK);  // 黑色背景（增强文字对比度）
@@ -403,8 +407,8 @@ int main() {
 
     UI();  // 显示图形界面提示
     while (1) {
-        printf("请输入质量比的幂次n(n为偶数才有规律)：");
-        if (scanf_s("%d", &massRatioPower) != 1) {
+        printf("请输入质量比的幂次n (1~%d): ", MAX_MASS_POWER);
+        if (scanf("%d", &massRatioPower) != 1) {
             // 输入非数字时清空缓冲区
             while (getchar() != '\n');
             printf("错误：请输入整数！\n");
@@ -424,14 +428,14 @@ int main() {
         wsxnn = -(massRatioPower + 1) * 4.625; // 根据质量幂次调整初始速度，避免高幂次下计算爆炸
     }
     else if (massRatioPower >= 12) {
-		wsxnn = -3.0; // 适中速度，避免过快导致穿透
+        wsxnn = -3.0; // 适中速度，避免过快导致穿透
     }
-    else{
-        if(massRatioPower >= 6)
-        wsxnn = -0.345; // 适中速度，避免过快导致穿透
+    else {
+        if (massRatioPower >= 6)
+            wsxnn = -0.345; // 适中速度，避免过快导致穿透
         else
-			wsxnn = -0.021; // 适中速度，避免过快导致穿透
-	}
+            wsxnn = -0.021; // 适中速度，避免过快导致穿透
+    }
     bool isLargeN = (massRatioPower > LARGE_N_THRESHOLD);  // 新增：判断是否大n
 
     if (!isLargeN) {
