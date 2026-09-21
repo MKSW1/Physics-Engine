@@ -121,4 +121,4 @@ dt = min(dt, speedBasedDt);
 ## 联系方式
 若遇到问题或有优化建议，可通过以下方式反馈：
 - 邮箱：cpx5210375@gmail.com
-- GitHub：https://github.com/HaiKuoTianKong-Error/Physics-Engine/tree/master
+- GitHub：https://github.com/MKSW1/Physics-Engine/tree/master
